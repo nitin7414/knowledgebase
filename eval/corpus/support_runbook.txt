@@ -1,0 +1,19 @@
+# Customer Support SOP & Incident Escalation Runbook
+
+## Section 1: Ticket Severity Definitions
+Support incidents are categorized strictly according to business operational impact:
+- P0 (Critical Outage): Total system unreachability, severe security breach, or complete loss of query processing impacting all production tenants.
+- P1 (High Impact / Major Impairment): Severe degradation of core retrieval or ingestion features affecting more than 20% of active sessions, with no immediate workaround.
+- P2 (Moderate Issue): Non-critical functional anomaly, localized vector indexing delay, or partial admin UI disruption with a viable operational workaround.
+- P3 (Minor Question / Feature Inquiry): General usability questions, formatting guidance, non-blocking bug reports, or minor cosmetic inconsistencies.
+
+## Section 2: SLA Response & Resolution Windows
+Each severity classification dictates strict contractual turnaround targets:
+1. P0 (Critical Outage): Initial response within 10 minutes. Engineering lead escalation within 15 minutes. Status page public update cadence every 30 minutes until full mitigation.
+2. P1 (High Impact): Initial response within 30 minutes. Engineering escalation within 1 hour. Incident update cadence every 2 hours.
+3. P2 (Moderate Issue): Initial response within 4 business hours. Target resolution within 24 business hours.
+4. P3 (Minor Question): Initial response within 24 business hours. Resolution best-effort upon sprint planning.
+
+## Section 3: Escalation Channels & On-Call Rotation
+On-call engineers are paged via automated PagerDuty rotations. If the primary on-call does not acknowledge a P0 page within 5 minutes, escalation cascades automatically to the secondary engineering director.
+

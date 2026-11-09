@@ -1,0 +1,15 @@
+# Developer Security Hygiene & Workstation Guidelines v2.0 (Topic Distractor)
+
+## Section 1: Local Developer Workstations & SSH Keys
+All software developers must utilize Ed25519 SSH keys with hardware-backed FIDO2 security keys (YubiKey 5 Series). 
+RSA keys under 4096 bits are deprecated and blocked by GitHub Enterprise branch policies. 
+Local hard drive full-disk encryption (FileVault on macOS, BitLocker on Windows) is enforced through automated MDM profiles.
+
+## Section 2: Code Repository Hygiene & Secret Scanning
+Commits containing plaintext API keys, tokens, or private certificates are automatically rejected pre-receive by git-secrets and Trufflehog hooks.
+GPG signature verification is mandatory for all commits merged into main or release branches.
+
+## Section 3: Package Dependency Management
+All Node.js and Python packages must be vetted through our internal Artifactory proxy with Snyk vulnerability scanning. 
+Critical severity CVEs mandate patching within 48 hours of detection.
+

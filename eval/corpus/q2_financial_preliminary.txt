@@ -1,0 +1,15 @@
+# Q2 2026 Preliminary Financial Operating Summary (Archived Distractor)
+
+## Section 1: Q2 Performance Overview
+In the second quarter of fiscal year 2026 (ended June 30, 2026), preliminary revenue reached $68.1M, representing a +22.0% YoY growth. 
+Net Revenue Retention stood at 112%, and enterprise seat additions totaled 1,450 seats. 
+Note: This document reflects preliminary archived Q2 figures and must not be confused with official Q3 audited statements.
+
+## Section 2: Q2 Regional Breakdown
+- North America: Q2 revenue was $35.4M with gross operating margin of 75.1%.
+- EMEA: Q2 revenue totaled $20.8M with gross margin of 73.4%.
+- APAC: Q2 revenue was $11.9M with gross margin of 71.0%.
+
+## Section 3: Q2 Cost Structure
+Tier-1 support costs in Q2 were reduced by $650,000 through legacy heuristic bot scripts before the introduction of multi-agent RAG tooling. Customer acquisition costs rose temporarily by 4% due to international marketing initiatives.
+

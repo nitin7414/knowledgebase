@@ -1,0 +1,19 @@
+# Q3 2026 Financial Audit & Operating Results Report
+
+## Section 1: Executive Summary
+The company concluded the third quarter of fiscal year 2026 with outstanding operational momentum. Consolidated gross revenue expanded by +34.2% YoY, totaling $83.4M across all operating segments. 
+Growth was primarily propelled by enterprise subscription tier adoption and multi-agent workspace licensing expansions. Net Revenue Retention (NRR) reached 118%, maintaining high durability against enterprise contract churn.
+
+## Section 2: Regional Performance & Margin Breakdown
+Regional revenue and margin distribution for Q3 2026:
+1. North America: Generated $42.8M in net recognized revenue, representing a +28.4% YoY increase. Gross operating margin in this territory remained strong at 78.5%.
+2. EMEA (Europe, Middle East, Africa): Generated $26.1M in net recognized revenue, reflecting a +39.1% YoY expansion. Gross margin reached 76.2%.
+3. APAC (Asia-Pacific): Generated $14.5M in net revenue, marking our fastest accelerating regional segment with +44.0% YoY growth. Gross margin stood at 74.0%.
+
+## Section 3: Cost Structure & Operating Leverage
+Operating leverage accelerated significantly during Q3. The enterprise transition toward automated multi-agent RAG support pipelines curtailed tier-1 customer assistance costs by $1.4M annually. 
+Consolidated sales and marketing acquisition costs (CAC) decreased by 18%, driven by unified enterprise platform licensing consolidation.
+
+## Section 4: Fiscal Capital Expenditures & Guidance
+Capital expenditure for serverless vector database clusters and GPU inference compute equaled $5.2M. The board approved a $15M liquidity reserve for subsequent cloud infrastructure expansion in Q4 2026.
+

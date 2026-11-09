@@ -1,0 +1,11 @@
+# Internal Corporate IT Helpdesk SLA Handbook (Distractor)
+
+## Section 1: Internal Employee Hardware & Office IT
+This handbook applies strictly to internal staff IT requests, distinct from customer-facing production cloud services:
+- Tier A (Lost / Stolen Laptop): Remote MDM wipe initiated within 15 minutes. Hardware courier dispatched within 24 hours.
+- Tier B (Monitor / Peripheral Replacement): Procurement ticket processed within 3 business days.
+- Tier C (Software License Assignment): Jira, Slack, or GitHub seat provisioned within 8 business hours.
+
+## Section 2: Office Facilities & Badge Access
+Badge replacements for corporate office turnstiles require security approval and 24-hour turnaround time. Guest passes must be registered 12 hours in advance via the Envoy receptionist portal.
+

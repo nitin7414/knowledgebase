@@ -1,0 +1,294 @@
+{
+  "version": "2.0",
+  "description": "Hardened 32-question benchmark including topic-overlapping distractors, paraphrased queries, multi-chunk answers, and in-domain near-miss refusals.",
+  "items": [
+    {
+      "id": "q01",
+      "question": "What was the total consolidated revenue growth rate year-over-year in Q3 2026?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 1: Executive Summary",
+      "referenceAnswer": "Consolidated gross revenue expanded by +34.2% YoY, totaling $83.4M across all operating segments.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q02",
+      "question": "What was the Net Revenue Retention (NRR) reported in the Q3 financial report?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 1: Executive Summary",
+      "referenceAnswer": "Net Revenue Retention (NRR) reached 118% in Q3 2026.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q03",
+      "question": "How much revenue did North America generate in Q3 and what was its gross margin?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 2: Regional Performance & Margin Breakdown",
+      "referenceAnswer": "North America generated $42.8M in net recognized revenue (+28.4% YoY) with a gross margin of 78.5%.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q04",
+      "question": "Which regional segment had the fastest year-over-year growth rate in Q3 2026?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 2: Regional Performance & Margin Breakdown",
+      "referenceAnswer": "APAC was the fastest growing regional segment with +44.0% YoY growth, generating $14.5M with 74.0% gross margin.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q05",
+      "question": "How much revenue was recognized from the EMEA region in Q3?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 2: Regional Performance & Margin Breakdown",
+      "referenceAnswer": "EMEA generated $26.1M in net recognized revenue (+39.1% YoY) with a 76.2% gross margin.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q06",
+      "question": "How much in tier-1 support costs were saved through automated multi-agent RAG tooling in Q3?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 3: Cost Structure & Operating Leverage",
+      "referenceAnswer": "Automated multi-agent RAG support tooling cut tier-1 customer assistance costs by $1.4M annually.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q07",
+      "question": "By what percentage did customer acquisition costs (CAC) decrease in Q3?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 3: Cost Structure & Operating Leverage",
+      "referenceAnswer": "Sales and marketing customer acquisition costs (CAC) decreased by 18%.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q08",
+      "question": "How much capital expenditure was allocated to GPU inference and serverless vector database clusters?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 4: Fiscal Capital Expenditures & Guidance",
+      "referenceAnswer": "Capital expenditure for serverless vector database clusters and GPU compute totaled $5.2M.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q09",
+      "question": "What is the mandatory encryption algorithm required for data at rest?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 1: Cryptographic Standards for Data at Rest",
+      "referenceAnswer": "All persistent volumes, vector index tables, and storage buckets must enforce AES-256-GCM authenticated encryption.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q10",
+      "question": "What FIPS standard must Hardware Security Modules (HSM) adhere to for key management?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 1: Cryptographic Standards for Data at Rest",
+      "referenceAnswer": "Key management via Cloud KMS and HSMs must adhere to FIPS 140-3 Level 3 compliance.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q11",
+      "question": "How often are customer-managed encryption keys (CMEK) automatically rotated?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 1: Cryptographic Standards for Data at Rest",
+      "referenceAnswer": "Customer-managed encryption keys (CMEK) undergo automated annual rotation.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q12",
+      "question": "What TLS version is mandatory for all public ingress endpoints?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 2: Cryptographic Standards for Data in Transit",
+      "referenceAnswer": "All public ingress connections mandate Transport Layer Security (TLS) 1.3 protocol.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q13",
+      "question": "Which legacy cipher suites are explicitly blocked at the Cloudflare edge proxy tier?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 2: Cryptographic Standards for Data in Transit",
+      "referenceAnswer": "Legacy ciphers including 3DES, RC4, MD5, and CBC-mode ciphers are blocked at the Cloudflare edge.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q14",
+      "question": "How is internal microservice communication encrypted inside Kubernetes clusters?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 2: Cryptographic Standards for Data in Transit",
+      "referenceAnswer": "Inter-service RPC communication enforces Mutual TLS (mTLS) with short-lived X.509 certificates provisioned by SPIFFE/SPIRE.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q15",
+      "question": "How long do elevated administrative permissions last before expiring under break-glass workflows?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 3: Identity, Access Control & Zero Trust",
+      "referenceAnswer": "Administrative elevated permissions expire automatically after 4 hours under monitored break-glass workflows.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q16",
+      "question": "What is the definition of a P0 critical outage in the support runbook?",
+      "expectedDocument": "support_runbook.txt",
+      "expectedSection": "Section 1: Ticket Severity Definitions",
+      "referenceAnswer": "P0 is defined as total system unreachability, severe security breach, or complete loss of query processing impacting all production tenants.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q17",
+      "question": "What is the target initial response time and escalation window for a P0 ticket?",
+      "expectedDocument": "support_runbook.txt",
+      "expectedSection": "Section 2: SLA Response & Resolution Windows",
+      "referenceAnswer": "For P0, initial response must occur within 10 minutes, and engineering lead escalation within 15 minutes.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q18",
+      "question": "How frequently must the public status page be updated during an active P0 incident?",
+      "expectedDocument": "support_runbook.txt",
+      "expectedSection": "Section 2: SLA Response & Resolution Windows",
+      "referenceAnswer": "The public status page must be updated every 30 minutes until full mitigation.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q19",
+      "question": "What is the initial response SLA and escalation window for a P1 support incident?",
+      "expectedDocument": "support_runbook.txt",
+      "expectedSection": "Section 2: SLA Response & Resolution Windows",
+      "referenceAnswer": "P1 incidents require initial response within 30 minutes, engineering escalation within 1 hour, and updates every 2 hours.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q20",
+      "question": "What happens if a primary on-call engineer does not acknowledge a P0 PagerDuty alert within 5 minutes?",
+      "expectedDocument": "support_runbook.txt",
+      "expectedSection": "Section 3: Escalation Channels & On-Call Rotation",
+      "referenceAnswer": "If the primary on-call does not acknowledge a P0 page within 5 minutes, escalation cascades automatically to the secondary engineering director.",
+      "isUnanswerable": false,
+      "category": "direct"
+    },
+    {
+      "id": "q21",
+      "question": "Compare North America vs EMEA revenue contributions and margins in Q3 2026.",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 2: Regional Performance & Margin Breakdown",
+      "referenceAnswer": "North America contributed $42.8M (78.5% margin) whereas EMEA contributed $26.1M (76.2% margin).",
+      "isUnanswerable": false,
+      "category": "multi-chunk"
+    },
+    {
+      "id": "q22",
+      "question": "Summarize all cryptographic protocols required for both data at rest and data in transit.",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 1 & 2",
+      "referenceAnswer": "Data at rest mandates AES-256-GCM with Cloud KMS/HSM key rotation, while data in transit mandates TLS 1.3 externally and mTLS via SPIFFE/SPIRE internally.",
+      "isUnanswerable": false,
+      "category": "multi-chunk"
+    },
+    {
+      "id": "q23",
+      "question": "What was our quarterly top-line revenue expansion during the third fiscal quarter?",
+      "expectedDocument": "financial_audit.txt",
+      "expectedSection": "Section 1: Executive Summary",
+      "referenceAnswer": "Consolidated gross revenue expanded by +34.2% YoY totaling $83.4M.",
+      "isUnanswerable": false,
+      "category": "paraphrased"
+    },
+    {
+      "id": "q24",
+      "question": "What are the allowed cipher standards across production public ingress points?",
+      "expectedDocument": "security_architecture.txt",
+      "expectedSection": "Section 2: Cryptographic Standards for Data in Transit",
+      "referenceAnswer": "Public ingress points strictly mandate TLS 1.3, with HTTP/2 and HTTP/3 fallbacks allowed only under TLS 1.3 cipher suites.",
+      "isUnanswerable": false,
+      "category": "paraphrased"
+    },
+    {
+      "id": "q25",
+      "question": "What were the preliminary Q2 revenue figures and how do they differ from Q3?",
+      "expectedDocument": "q2_financial_preliminary.txt",
+      "expectedSection": "Section 1: Q2 Performance Overview",
+      "referenceAnswer": "Q2 preliminary revenue reached $68.1M (+22.0% YoY), whereas Q3 revenue grew by +34.2% YoY to $83.4M.",
+      "isUnanswerable": false,
+      "category": "distractor-aware"
+    },
+    {
+      "id": "q26",
+      "question": "What SSH key algorithms are required for local software developer workstations?",
+      "expectedDocument": "developer_security_guidelines.txt",
+      "expectedSection": "Section 1: Local Developer Workstations & SSH Keys",
+      "referenceAnswer": "Developers must utilize Ed25519 SSH keys with hardware-backed FIDO2 security keys (YubiKey 5 Series).",
+      "isUnanswerable": false,
+      "category": "distractor-aware"
+    },
+    {
+      "id": "q27",
+      "question": "What is the turnaround time for initiating a remote MDM wipe if an employee loses their laptop?",
+      "expectedDocument": "internal_sla_handbook.txt",
+      "expectedSection": "Section 1: Internal Employee Hardware & Office IT",
+      "referenceAnswer": "A remote MDM wipe is initiated within 15 minutes for a lost or stolen laptop under Tier A internal IT SLA.",
+      "isUnanswerable": false,
+      "category": "distractor-aware"
+    },
+    {
+      "id": "q28",
+      "question": "What is the company's quantum cryptography roadmap for 2029?",
+      "expectedDocument": null,
+      "expectedSection": null,
+      "referenceAnswer": "I couldn't find this information in your uploaded documents.",
+      "isUnanswerable": true,
+      "category": "unanswerable-out-of-domain"
+    },
+    {
+      "id": "q29",
+      "question": "What was the compensation and stock bonus paid to the Chief Executive Officer in 2026?",
+      "expectedDocument": null,
+      "expectedSection": null,
+      "referenceAnswer": "I couldn't find this information in your uploaded documents.",
+      "isUnanswerable": true,
+      "category": "unanswerable-out-of-domain"
+    },
+    {
+      "id": "q30",
+      "question": "What was our audited Q4 2026 recognized revenue for the North American territory?",
+      "expectedDocument": null,
+      "expectedSection": null,
+      "referenceAnswer": "I couldn't find this information in your uploaded documents.",
+      "isUnanswerable": true,
+      "category": "unanswerable-near-miss"
+    },
+    {
+      "id": "q31",
+      "question": "What is the maximum allowed resolution time for a Tier D internal facilities request?",
+      "expectedDocument": null,
+      "expectedSection": null,
+      "referenceAnswer": "I couldn't find this information in your uploaded documents.",
+      "isUnanswerable": true,
+      "category": "unanswerable-near-miss"
+    },
+    {
+      "id": "q32",
+      "question": "What is the response window for a P4 customer support severity ticket?",
+      "expectedDocument": null,
+      "expectedSection": null,
+      "referenceAnswer": "I couldn't find this information in your uploaded documents.",
+      "isUnanswerable": true,
+      "category": "unanswerable-near-miss"
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum DocumentStatus {
+  processing
+  ready
+  failed
+}
+
+model Document {
+  id        String         @id @default(uuid())
+  sessionId String         @map("session_id")
+  filename  String
+  mime      String
+  size      Int
+  fileHash  String         @map("file_hash")
+  status    DocumentStatus @default(processing)
+  pageCount Int            @default(0) @map("page_count")
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  chunks                Chunk[]
+  conversationDocuments ConversationDocument[]
+
+  @@index([sessionId], name: "idx_documents_session_id")
+  @@index([fileHash], name: "idx_documents_file_hash")
+  @@map("documents")
+}
+
+model Chunk {
+  id           String                      @id @default(uuid())
+  documentId   String                      @map("document_id")
+  chunkIndex   Int                         @map("chunk_index")
+  content      String                      @db.Text
+  tokenCount   Int                         @map("token_count")
+  pageNumber   Int?                        @map("page_number")
+  sectionTitle String?                     @map("section_title")
+  metadata     Json?                       @map("metadata")
+  contentHash  String                      @map("content_hash")
+  embedding    Unsupported("vector(768)")?
+  tsv          Unsupported("tsvector")?
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId], name: "idx_chunks_document_id")
+  @@index([contentHash], name: "idx_chunks_content_hash")
+  @@map("chunks")
+}
+
+model Conversation {
+  id             String   @id @default(uuid())
+  sessionId      String   @map("session_id")
+  title          String
+  rollingSummary String?  @db.Text @map("rolling_summary")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  messages              Message[]
+  conversationDocuments ConversationDocument[]
+
+  @@index([sessionId], name: "idx_conversations_session_id")
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  role           String   // "user" | "assistant" | "system"
+  content        String   @db.Text
+  sources        Json?    // [{ documentName, pageOrSection, confidence, snippet }]
+  usage          Json?    // { tokensIn, tokensOut, model, cacheHit, latencyMs }
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId], name: "idx_messages_conversation_id")
+  @@map("messages")
+}
+
+model ConversationDocument {
+  conversationId String @map("conversation_id")
+  documentId     String @map("document_id")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, documentId])
+  @@index([conversationId], name: "idx_conv_docs_conversation_id")
+  @@index([documentId], name: "idx_conv_docs_document_id")
+  @@map("conversation_documents")
+}
+
+model RateLimit {
+  key         String   @id
+  windowStart DateTime @map("window_start")
+  count       Int      @default(0)
+
+  @@index([windowStart], name: "idx_rate_limits_window_start")
+  @@map("rate_limits")
+}
+
+model AnswerCache {
+  key       String   @id
+  answer    String   @db.Text
+  sources   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  ttl       Int      @default(86400) // seconds
+
+  @@index([createdAt], name: "idx_answer_cache_created_at")
+  @@map("answer_cache")
+}
+
