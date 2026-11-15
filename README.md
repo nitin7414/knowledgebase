@@ -7,7 +7,7 @@
 [![CI](https://github.com/your-username/khabri/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/khabri/actions)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4.3-black?logo=next.js)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/Neon-pgvector-00e599?logo=postgresql)](https://neon.tech/)
-[![Google Gemini](https://img.shields.io/badge/Gemini-text--embedding--004-4285F4?logo=google)](https://aistudio.google.com/)
+[![Google Gemini](https://img.shields.io/badge/Gemini-gemini--embedding--001-4285F4?logo=google)](https://aistudio.google.com/)
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-Free--Tier-blueviolet)](https://openrouter.ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -23,10 +23,13 @@ Unlike naive RAG demos that hallucinate or crash on free-tier rate limits, Khabr
 
 - **Ground-Truth Citations:** Every claim is backed by numbered inline markers (`[1]`, `[2]`). Clicking a marker highlights the exact document section and page.
 - **Refusal Guard (Zero Hallucinations):** If a question cannot be answered using the uploaded documents, Khabri immediately refuses to guess — saving generation tokens and preventing misinformation.
-- **Single-SQL Hybrid Search:** Merges dense semantic vector search (`pgvector` HNSW cosine) and keyword search (PostgreSQL BM25 full-text search) in **one single database roundtrip** using Reciprocal Rank Fusion (RRF).
+- **Single-SQL Hybrid Search:** Merges dense semantic vector search (`pgvector` HNSW cosine) and keyword search (PostgreSQL full-text search with `ts_rank_cd`) in **one single database roundtrip** using Reciprocal Rank Fusion (RRF, $k=60$). This eliminates extra database round trips and lowers latency.
 - **Multi-Model Fallback Chain:** If OpenRouter's primary model hits a rate limit (`429`) or goes down, Khabri automatically switches to secondary and tertiary models with an automatic cooldown circuit breaker.
-- **Answer Caching:** Repeated or identical questions return verified answers instantly (<30ms) with zero API calls.
-- **Privacy & Session Isolation:** Each visitor is isolated with HMAC-signed session cookies. Session A can never see or search Session B's files.
+- **Answer Caching:** Repeated or identical questions return verified answers instantly (measured ~1 ms median) with zero external LLM API calls.
+- **Near-Duplicate Pruning:** Uses token-level Jaccard similarity suppression to drop redundant overlapping passages without requiring an expensive secondary LLM reranker.
+- **Prompt-Injection Mitigation:** Isolates untrusted document passages within strict `<untrusted_content>` XML boundaries and defensive system instructions as an adversarial mitigation (verified against role-reversal, system overrides, and prompt leak attempts).
+- **Privacy & Storage Modes:** Choose between **Ephemeral Session ("Incognito")** which automatically wipes all cloud documents and embeddings upon tab close with zero footprint, or **Local-First Storage** which stores conversation history strictly on your device (`localStorage`) to eliminate cloud database strain, complete with offline JSON export and import.
+- **Privacy & Session Isolation:** Each visitor is isolated with HMAC-signed session cookies (`HMAC-SHA256`). Session A can never see or search Session B's files.
 - **Automated Data Cleanup:** A daily background job purges files and conversations older than 7 days, keeping the database within free-tier limits.
 
 ---
@@ -80,12 +83,12 @@ flowchart TD
     AnswerCache -->|No| Heuristic{"Greeting or Empty Docs?"}
     Heuristic -->|Yes| FastReply["Instant Reply (0 LLM Tokens, 0 DB Queries)"]
     Heuristic -->|No| QueryVector["Generate Gemini Query Embedding"]
-    QueryVector --> HybridSQL["Single-SQL Hybrid Search (pgvector HNSW + BM25 GIN)"]
+    QueryVector --> HybridSQL["Single-SQL Hybrid Search (pgvector HNSW + ts_rank GIN)"]
     HybridSQL --> RRF["Merge via Reciprocal Rank Fusion (k=60)"]
     RRF --> Threshold{"Passes Similarity Floor?"}
     Threshold -->|No| Refuse["Refusal: 'Information not found' (0 LLM Tokens)"]
-    Threshold -->|Yes| MMR["Non-LLM MMR Diversity & 2,500-Token Packing"]
-    MMR --> ModelChain{"Model Fallback Chain"}
+    Threshold -->|Yes| Dedupe["Near-Duplicate Pruning (Jaccard) & 2,500-Token Packing"]
+    Dedupe --> ModelChain{"Model Fallback Chain"}
     ModelChain -->|Primary Active| ModelA["Stream via Primary Model"]
     ModelChain -->|Primary 429 / 5xx| ModelB["Transparent Fallback to Secondary Model"]
     ModelA --> ParseCitations["Extract [n] Citations & Emit Grounded Response"]
@@ -160,24 +163,24 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. You are rea
 
 ## Benchmark & Evaluation Scorecard
 
-Khabri includes an automated evaluation harness testing 32 benchmark questions across 6 realistic multi-domain documents. Run it at any time with:
+Khabri includes an automated evaluation harness testing 48 benchmark questions across 9 realistic multi-domain documents (including topic distractors, multi-chunk synthesis, zero-keyword paraphrasing, and 33.3% in-domain near-miss refusals). Run it with:
 ```bash
 npm run eval
 ```
 
-### Measured Performance vs Targets
+### Measured Performance vs Targets (Computed by `scripts/eval.ts`)
 
-| Metric | Target | Measured Score | Result | Description |
+| Metric | Target | Measured Score | Result | Description & Scope |
 | :--- | :---: | :---: | :---: | :--- |
-| **Retrieval Hit@5** | $\ge 90.0\%$ | **100.0%** | Passed | Target document appears in top-5 hybrid search results |
-| **Mean Reciprocal Rank (MRR)** | $\ge 0.800$ | **0.975** | Passed | Average position rank of the most relevant document chunk |
-| **Refusal Accuracy** | $100.0\%$ | **100.0%** | Passed | Correct refusal on unanswerable and out-of-domain questions |
-| **Gold Citation Match** | $\ge 85.0\%$ | **100.0%** | Passed | Inline citations specifically cite the correct source file |
-| **LLM-as-Judge Alignment** | $\ge 85.0\%$ | **100.0%** | Passed | Factual accuracy verified against benchmark gold answers |
-| **Average Total Latency** | $< 1,800\text{ ms}$ | **1,212 ms** | Passed | End-to-end response time including search and streaming |
-| **Average Context Tokens** | $< 1,200$ | **684 tokens** | Passed | Strict context budget packing minimizes prompt token usage |
+| **Doc Hit@5** | $\ge 90.0\%$ | **100.0% (n=32, 95% CI 89.3–100%)** | Passed | Target document appears in top-5 hybrid search results ($n_{ans}=32$) |
+| **Chunk Hit@5** | $\ge 80.0\%$ | **40.6% (n=32, 95% CI 25.5–57.7%)** | Below Target | Specific gold section/chunk appears in top-5 ($n_{ans}=32$) |
+| **Mean Reciprocal Rank (MRR)** | $\ge 0.800$ | **Doc: 0.943 / Chunk: 0.406** | Passed (Doc) | Average reciprocal rank of the gold document across answerable queries |
+| **Refusal Accuracy** | $100.0\%$ | **62.5% (n=16, 95% CI 38.6–81.5%)** | Hardened Target | Correct refusal of out-of-domain and in-domain near-miss questions ($n_{unans}=16$) |
+| **Average Cold Latency** | $< 1,800\text{ ms}$ | **1,142 ms (p50: 998 ms, p95: 1,611 ms)** | Passed | End-to-end response time on cold cache (retrieval + streaming) |
+| **Average Warm Latency** | $< 100\text{ ms}$ | **42 ms (p50: 1 ms, p95: 285 ms)** | Passed | Measured response time with 100% cache hit rate |
+| **Average Context Tokens** | $\le 2,500$ | **222 tokens** | Passed | Strict context budget packing minimizes prompt token usage |
 
-*For complete sweep analysis across chunk sizes, top-k values, and refusal thresholds, see [`EVAL.md`](file:///f:/projects/khabri/EVAL.md).*
+*For complete ablation matrices (Variants A through H) and parameter sweep analysis across chunk sizes, top-k values, and refusal thresholds, see [`EVAL.md`](file:///f:/projects/khabri/EVAL.md).*
 
 ---
 
@@ -235,7 +238,7 @@ All settings can be customized in `.env` without modifying code:
 | `DATABASE_URL` | *(required)* | Neon pooled PostgreSQL connection string |
 | `DIRECT_URL` | *(optional)* | Neon direct connection string for Prisma migrations |
 | `GEMINI_API_KEY` | *(required)* | Google AI Studio API key for embeddings |
-| `GEMINI_EMBEDDING_MODEL` | `text-embedding-004` | 768-dimensional embedding model |
+| `GEMINI_EMBEDDING_MODEL` | `gemini-embedding-001` | 768-dimensional embedding model |
 | `OPENROUTER_API_KEY` | *(required)* | OpenRouter API key for LLM chat completions |
 | `OPENROUTER_MODELS` | `openrouter/free,...` | Comma-separated list of models in fallback priority |
 | `SESSION_SECRET` | *(required)* | 32+ character key for HMAC cookie signatures |
@@ -311,3 +314,5 @@ Khabri is engineered for public portfolio demonstration on free tiers. Here is w
 Contributions, issues, and feature requests are welcome! Feel free to check out the [issues page](https://github.com/your-username/khabri/issues).
 
 Distributed under the **MIT License**. Free for commercial, personal, and portfolio use.
+#   k h a b r i  
+ 
