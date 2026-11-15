@@ -1,0 +1,19 @@
+# Cloud Infrastructure Incident Postmortem: INC-2026-0814 (Distractor)
+
+## Section 1: Executive Summary & Outage Timeline
+On August 14, 2026, between 14:22 UTC and 15:45 UTC, our production vector database cluster experienced a P0 critical impairment. 
+The outage originated from a cascading Redis cache eviction storm during an automated rolling deployment. 
+Query processing latency degraded by 480% before total ingress gateway timeouts ensued across the US-East region.
+Customer support escalated the P0 incident to the engineering lead within 4 minutes, beating the 10-minute SLA requirement.
+
+## Section 2: Root Cause & TLS Certificate Interaction
+During the incident triage, automated health probes initiated rapid reconnect retries against the primary Kubernetes API gateway.
+A concurrent automated cert-manager rotation of internal mTLS X.509 certificates caused temporary TLS handshake timeouts.
+Contrary to standard TLS 1.3 protocol operation, misconfigured ingress sidecars attempted fallback negotiation over deprecated TLS 1.2 ciphers, which were rejected by Cloudflare edge proxies.
+The system stabilized after reverting the sidecar routing rule and provisioning additional memory to the Redis cache replicas.
+
+## Section 3: Preventive Action Items & Architectural Remediation
+1. Enforce strict rate limits on Kubernetes ingress reconnect storms to prevent pod thrashing.
+2. Upgrade internal SPIFFE/SPIRE agent caches so mTLS certificates survive transient control plane disconnections.
+3. Review and align incident escalation paging cadences between customer support and cloud reliability engineering.
+

@@ -4,6 +4,7 @@ import { getOrCreateSessionId } from "@/lib/session";
 import { ingestDocumentFile } from "@/lib/ingestion/pipeline";
 import { checkUploadRateLimits, getClientIp } from "@/lib/ratelimit";
 import { createRequestId, logEvent } from "@/lib/logger";
+import { RAG_CONFIG } from "@/lib/rag/config";
 
 export const maxDuration = 60; // Allow sufficient serverless execution time for large docs
 
@@ -99,19 +100,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Enforce 4 MB upload limit for Vercel Hobby serverless ceiling (4.5 MB platform limit)
-    const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+    const MAX_UPLOAD_BYTES = RAG_CONFIG.chunking.maxFileSizeMB * 1024 * 1024;
     if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
         {
           error: "Payload too large",
-          message: `File size (${(file.size / 1024 / 1024).toFixed(2)} MB) exceeds the 4.0 MB serverless platform limit. Please upload a smaller file.`,
+          message: `File size (${(file.size / 1024 / 1024).toFixed(2)} MB) exceeds the ${RAG_CONFIG.chunking.maxFileSizeMB.toFixed(1)} MB serverless platform limit. Please upload a smaller file.`,
         },
         { status: 413 }
       );
     }
 
-    // Enforce max documents per session cap (15 documents)
-    const MAX_DOCS_PER_SESSION = 15;
+    // Enforce max documents per session cap
+    const MAX_DOCS_PER_SESSION = RAG_CONFIG.limits.maxDocsPerSession;
     const existingCount = await prisma.document.count({ where: { sessionId } });
     if (existingCount >= MAX_DOCS_PER_SESSION) {
       return NextResponse.json(
@@ -123,8 +124,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Enforce total storage cap per session (20 MB)
-    const MAX_STORAGE_BYTES = 20 * 1024 * 1024;
+    // Enforce total storage cap per session
+    const MAX_STORAGE_BYTES = RAG_CONFIG.limits.maxStoragePerSessionMB * 1024 * 1024;
     const storageSum = await prisma.document.aggregate({
       where: { sessionId },
       _sum: { size: true },

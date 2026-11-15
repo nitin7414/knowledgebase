@@ -5,6 +5,21 @@ import { getOrCreateSessionId, SESSION_COOKIE_NAME } from "@/lib/session";
 
 export const maxDuration = 30;
 
+/**
+ * Session Lifecycle & Data Purge Endpoint
+ * 
+ * Supports POST and DELETE requests.
+ * Deletion is strictly scoped to the caller's authenticated session (via HMAC-signed session cookie).
+ * 
+ * NOTE ON RELIABILITY:
+ * - Client-side `navigator.sendBeacon` upon page unload is best-effort (unreliable on mobile browsers).
+ * - The server-side retention cron (`/api/cron/cleanup`) provides the guaranteed cleanup mechanism,
+ *   purging stale documents, chunks, and sessions older than RAG_CONFIG.limits.dataRetentionDays (7 days).
+ */
+export async function POST() {
+  return DELETE();
+}
+
 export async function DELETE() {
   try {
     const sessionId = await getOrCreateSessionId();

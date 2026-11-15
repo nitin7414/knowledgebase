@@ -11,8 +11,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
-  User,
-  LogOut,
+  Shield,
+  Zap,
+  HardDrive,
+  EyeOff,
   MessageSquareText,
   X,
   Compass,
@@ -25,6 +27,7 @@ interface SidebarProps {
   activeConversationId: string;
   onSelectConversation: (id: string) => void;
   onNewChat: () => void;
+  onNewIncognitoChat: () => void;
   onRenameConversation: (id: string, newTitle: string) => void;
   onDeleteConversation: (id: string) => void;
   currentView: ViewMode;
@@ -42,6 +45,7 @@ export function Sidebar({
   activeConversationId,
   onSelectConversation,
   onNewChat,
+  onNewIncognitoChat,
   onRenameConversation,
   onDeleteConversation,
   currentView,
@@ -57,10 +61,9 @@ export function Sidebar({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isWiping, setIsWiping] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
   // Close menus when clicking outside
@@ -68,9 +71,6 @@ export function Sidebar({
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpenMenuId(null);
-      }
-      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
-        setShowProfileMenu(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -122,10 +122,10 @@ export function Sidebar({
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
                 <span className="font-semibold text-sm tracking-tight text-zinc-100 truncate">
-                  NITGPT
+                  Khabri
                 </span>
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono">
-                  Enterprise RAG
+                  Production RAG
                 </span>
               </div>
             )}
@@ -154,8 +154,8 @@ export function Sidebar({
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-1 pt-1">
-          {/* New Chat Button */}
+        <div className="space-y-1.5 pt-1">
+          {/* New Chat Button (Local-First Default) */}
           <button
             onClick={() => {
               onNewChat();
@@ -165,10 +165,33 @@ export function Sidebar({
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-zinc-100 bg-zinc-800/90 hover:bg-zinc-800 hover:text-white border border-zinc-700/60 shadow-sm transition-all duration-150 ${
               isCollapsed ? "justify-center px-0" : ""
             }`}
-            title="New Chat"
+            title="New Chat (Local-First)"
           >
             <Plus className="w-4 h-4 shrink-0 text-zinc-200 stroke-[2.2]" />
             {!isCollapsed && <span>New Chat</span>}
+          </button>
+
+          {/* Incognito Mode Button (Ephemeral) */}
+          <button
+            onClick={() => {
+              onNewIncognitoChat();
+              onNavigateView("chat");
+              onCloseMobile();
+            }}
+            className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 text-amber-400/90 hover:text-amber-300 bg-amber-950/20 hover:bg-amber-950/40 border border-amber-900/40 ${
+              isCollapsed ? "justify-center px-0" : ""
+            }`}
+            title="Incognito Mode (Ephemeral — vanished on exit)"
+          >
+            <EyeOff className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+            {!isCollapsed && (
+              <span className="flex items-center justify-between flex-1">
+                <span>Incognito Mode</span>
+                <span className="text-[10px] px-1 py-0.2 rounded font-mono font-medium bg-amber-500/20 text-amber-300">
+                  Ephemeral
+                </span>
+              </span>
+            )}
           </button>
 
           {/* Uploaded Documents Button */}
@@ -247,7 +270,11 @@ export function Sidebar({
                             }
                           }}
                         >
-                          <MessageSquareText className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                          {conv.isIncognito ? (
+                            <EyeOff className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                          ) : (
+                            <MessageSquareText className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                          )}
 
                           {isEditing ? (
                             <input
@@ -347,93 +374,46 @@ export function Sidebar({
         )}
       </div>
 
-      {/* BOTTOM SECTION: USER PROFILE & ACCOUNT */}
-      <div className="p-3 border-t border-zinc-800/80 relative">
-        <button
-          onClick={() => setShowProfileMenu(!showProfileMenu)}
-          className={`w-full flex items-center gap-3 p-1.5 rounded-lg text-left hover:bg-zinc-900 transition-colors duration-150 ${
-            isCollapsed ? "justify-center p-0" : ""
-          }`}
-        >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-200 text-xs font-semibold ring-1 ring-zinc-800 shrink-0">
-            {settings.user.name.split(" ").map((n) => n[0]).join("")}
-          </div>
-
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-zinc-200 truncate">
-                {settings.user.name}
-              </div>
-              <div className="text-[11px] text-zinc-500 truncate">
-                {settings.user.email}
-              </div>
-            </div>
-          )}
-        </button>
-
-        {/* Profile Popover Menu */}
-        {showProfileMenu && (
-          <div
-            ref={profileMenuRef}
-            className={`absolute bottom-full mb-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl py-1.5 z-40 text-xs ${
-              isCollapsed ? "left-12 w-48" : "left-3 right-3"
-            }`}
+      {/* BOTTOM SECTION: SETTINGS & CLOUD PURGE */}
+      <div className="p-2.5 border-t border-zinc-800/80 bg-zinc-950/90">
+        <div className={`flex items-center gap-1.5 ${isCollapsed ? "flex-col" : "justify-between"}`}>
+          <button
+            onClick={onOpenSettings}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
+            title="Settings & Privacy"
           >
-            <div className="px-3 py-2 border-b border-zinc-800/60">
-              <div className="font-medium text-zinc-200">{settings.user.name}</div>
-              <div className="text-[11px] text-zinc-500 truncate">{settings.user.email}</div>
-              <div className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                {settings.user.role}
-              </div>
-            </div>
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            {!isCollapsed && <span>Settings</span>}
+          </button>
 
-            <div className="py-1">
-              <button
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  onOpenSettings();
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors"
-              >
-                <User className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Account Profile</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  onNavigateView("documents");
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors"
-              >
-                <Database className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Knowledge Base Stats</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  onOpenSettings();
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Preferences</span>
-              </button>
-            </div>
-
-            <div className="pt-1 border-t border-zinc-800/60">
-              <button
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  alert("Sign-out demo: In production this will clear active auth session.");
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition-colors"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        )}
+          <button
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  "End this session and permanently wipe your cloud data? This clears your documents and embeddings from the cloud database."
+                )
+              ) {
+                return;
+              }
+              setIsWiping(true);
+              try {
+                await fetch("/api/session", { method: "DELETE" });
+                if (settings.storageMode === "ephemeral") {
+                  localStorage.clear();
+                }
+                window.location.reload();
+              } catch {
+                window.location.reload();
+              }
+            }}
+            disabled={isWiping}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium text-red-400/90 hover:text-red-300 hover:bg-red-950/30 transition-colors disabled:opacity-50"
+            title="End Session & Purge Cloud Data"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {!isCollapsed && <span>{isWiping ? "Purging..." : "End Session"}</span>}
+          </button>
+        </div>
       </div>
     </div>
   );

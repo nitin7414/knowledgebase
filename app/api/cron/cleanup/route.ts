@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma, { withDbRetry } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow 60s for batch cleanup
 
 export async function GET(req: NextRequest) {

@@ -2,9 +2,11 @@ import assert from "assert";
 import { buildSystemPrompt, formatSourcesForPrompt } from "../lib/rag/prompt";
 import { HybridSearchResult } from "../lib/rag/hybrid-search";
 
+// Note: XML boundary quarantine (<untrusted_content>) is an adversarial mitigation layer, not a cryptographic guarantee.
+// It defends against instruction override, role reversals, citation suppression, and secret leakage attempts.
 async function runInjectionDefenseTest() {
   console.log("==================================================================");
-  console.log("🛡️ Running Prompt-Injection & Untrusted Document Defense Test");
+  console.log("🛡️ Running Prompt-Injection & Untrusted Document Mitigation Test");
   console.log("==================================================================\n");
 
   // 1. Verify System Prompt Security Rules

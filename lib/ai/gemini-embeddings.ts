@@ -1,4 +1,5 @@
 import { EmbeddingProvider } from "./types";
+import { RAG_CONFIG, validateEmbeddingConfig } from "@/lib/rag/config";
 
 class Semaphore {
   private queue: (() => void)[] = [];
@@ -30,7 +31,7 @@ class Semaphore {
 
 export class GeminiEmbeddingProvider implements EmbeddingProvider {
   readonly name = "gemini";
-  readonly dimension = 768;
+  readonly dimension = RAG_CONFIG.embedding.dimension;
 
   private apiKey: string;
   private model: string;
@@ -38,9 +39,11 @@ export class GeminiEmbeddingProvider implements EmbeddingProvider {
 
   constructor(apiKey?: string, model?: string) {
     this.apiKey = apiKey || process.env.GEMINI_API_KEY || "";
-    const configured = model || process.env.GEMINI_EMBEDDING_MODEL;
-    // Normalize or fallback to currently active gemini-embedding-001
-    this.model = configured && configured !== "text-embedding-004" ? configured : "gemini-embedding-001";
+    const validated = validateEmbeddingConfig(
+      model || process.env.GEMINI_EMBEDDING_MODEL,
+      this.dimension
+    );
+    this.model = validated.model;
   }
 
   private async executeWithRetry<T>(operation: () => Promise<T>, maxRetries = 3): Promise<T> {

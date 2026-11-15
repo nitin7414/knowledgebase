@@ -7,7 +7,7 @@ const envSchema = z.object({
 
   // Embeddings (Google Gemini)
   GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required for generating embeddings"),
-  GEMINI_EMBEDDING_MODEL: z.string().default("text-embedding-004"),
+  GEMINI_EMBEDDING_MODEL: z.string().default("gemini-embedding-001"),
 
   // LLM Inference (OpenRouter)
   OPENROUTER_API_KEY: z.string().min(1, "OPENROUTER_API_KEY is required for chat completions"),

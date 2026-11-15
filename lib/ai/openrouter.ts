@@ -20,6 +20,7 @@ export interface StreamChunk {
     completionTokens: number;
     totalTokens: number;
   };
+  usageEstimated?: boolean;
 }
 
 export interface CompletionResult {
@@ -189,23 +190,28 @@ export async function* streamChatCompletion(
     }
 
     try {
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "http://localhost:3000",
-          "X-Title": process.env.OPENROUTER_APP_NAME || "Khabri RAG",
+      const res = await fetchWithRetry(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "http://localhost:3000",
+            "X-Title": process.env.OPENROUTER_APP_NAME || "Khabri RAG",
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            max_tokens: options.maxTokens ?? 1500,
+            temperature: options.temperature ?? 0.2,
+            stream: true,
+            stream_options: { include_usage: true },
+          }),
+          signal: options.signal,
         },
-        body: JSON.stringify({
-          model,
-          messages,
-          max_tokens: options.maxTokens ?? 1500,
-          temperature: options.temperature ?? 0.2,
-          stream: true,
-        }),
-        signal: options.signal,
-      });
+        2
+      );
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -230,6 +236,7 @@ export async function* streamChatCompletion(
   const decoder = new TextDecoder();
   let buffer = "";
   let fullOutput = "";
+  let providerUsage: { promptTokens: number; completionTokens: number; totalTokens: number } | null = null;
 
   try {
     while (true) {
@@ -261,6 +268,13 @@ export async function* streamChatCompletion(
                 modelUsed: activeModel,
               };
             }
+            if (parsed.usage) {
+              providerUsage = {
+                promptTokens: parsed.usage.prompt_tokens,
+                completionTokens: parsed.usage.completion_tokens,
+                totalTokens: parsed.usage.total_tokens,
+              };
+            }
           } catch {
             // Skip unparseable heartbeats or malformed frames
           }
@@ -278,11 +292,12 @@ export async function* streamChatCompletion(
     content: "",
     isDone: true,
     modelUsed: activeModel,
-    usage: {
+    usage: providerUsage ?? {
       promptTokens: promptEst,
       completionTokens: compEst,
       totalTokens: promptEst + compEst,
     },
+    usageEstimated: !providerUsage,
   };
 }
 

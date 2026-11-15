@@ -27,7 +27,7 @@ export interface HybridSearchOptions {
 }
 
 /**
- * Executes vector cosine similarity + Postgres full-text BM25 in ONE SQL query
+ * Executes vector cosine similarity + Postgres full-text search (ts_rank_cd) in ONE SQL query
  * and merges the ranked lists via Reciprocal Rank Fusion (RRF, k=60).
  */
 export async function executeHybridSearch(

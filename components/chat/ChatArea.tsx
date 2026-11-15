@@ -15,6 +15,9 @@ import {
   Shield,
   Layers,
   FileCheck2,
+  User,
+  EyeOff,
+  AlertCircle,
 } from "lucide-react";
 import { Conversation, DocumentItem, AppSettings } from "@/types/chat";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
@@ -28,6 +31,7 @@ interface ChatAreaProps {
   onToggleMobileSidebar: () => void;
   documents: DocumentItem[];
   settings: AppSettings;
+  onNavigateToDocuments?: () => void;
 }
 
 const STARTER_PROMPTS = [
@@ -65,6 +69,7 @@ export function ChatArea({
   onToggleMobileSidebar,
   documents,
   settings,
+  onNavigateToDocuments,
 }: ChatAreaProps) {
   const [inputText, setInputText] = useState("");
   const [selectedAttachments, setSelectedAttachments] = useState<string[]>([]);
@@ -74,6 +79,13 @@ export function ChatArea({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isExpiredChat = Boolean(
+    conversation &&
+      !conversation.isIncognito &&
+      conversation.messages.length > 0 &&
+      documents.length === 0
+  );
 
   // Auto-resize textarea
   const adjustTextareaHeight = () => {
@@ -161,19 +173,61 @@ export function ChatArea({
             <span className="font-semibold text-sm truncate max-w-[220px] sm:max-w-md">
               {conversation ? conversation.title : "New Chat"}
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>RAG Connected ({documents.length} docs)</span>
-            </span>
+            {conversation?.isIncognito ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                <EyeOff className="w-3.5 h-3.5 text-amber-500" />
+                <span>Incognito</span>
+              </span>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Local-First ({documents.length} docs)</span>
+              </span>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 hidden sm:block">
-            Knowbase 2.5 Pro
+            Khabri RAG
           </div>
         </div>
       </header>
+
+      {/* INCOGNITO / EPHEMERAL ONE-LINE BANNER */}
+      {conversation?.isIncognito && (
+        <div className="bg-amber-500/10 dark:bg-amber-950/40 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 shrink-0">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <EyeOff className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="truncate">
+              <strong>Incognito Mode:</strong> This chat is ephemeral — messages and temporary vectors vanish completely when you close the tab or switch away.
+            </span>
+          </div>
+          <span className="hidden sm:inline-flex text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold shrink-0 ml-2">
+            Zero Cloud Storage
+          </span>
+        </div>
+      )}
+
+      {/* RETENTION MISMATCH / DOCUMENTS EXPIRED BANNER */}
+      {isExpiredChat && (
+        <div className="bg-amber-500/10 dark:bg-amber-950/40 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200 shrink-0">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="truncate">
+              <strong>Documents expired, re-upload to continue</strong> — Documents and vectors are purged after 7 days by data retention policy. Retrieval is currently paused.
+            </span>
+          </div>
+          {onNavigateToDocuments && (
+            <button
+              onClick={onNavigateToDocuments}
+              className="ml-3 shrink-0 px-2.5 py-1 text-xs font-medium rounded-md bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+            >
+              Upload Documents
+            </button>
+          )}
+        </div>
+      )}
 
       {/* CHAT BODY */}
       <main className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
@@ -335,8 +389,8 @@ export function ChatArea({
 
                   {/* User Avatar */}
                   {isUser && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 border border-zinc-700 text-zinc-200 flex items-center justify-center shrink-0 text-xs font-semibold ring-2 ring-zinc-200 dark:ring-zinc-800">
-                      {settings.user.name.split(" ").map((n) => n[0]).join("")}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 border border-zinc-700 text-zinc-200 flex items-center justify-center shrink-0 text-xs font-semibold ring-2 ring-zinc-200 dark:ring-zinc-800" title="You">
+                      <User className="w-4 h-4 text-zinc-300" />
                     </div>
                   )}
                 </div>
@@ -454,7 +508,11 @@ export function ChatArea({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything about your documents... (Shift + Enter for new line)"
+              placeholder={
+                isExpiredChat
+                  ? "Documents expired, re-upload to continue..."
+                  : "Ask anything about your documents... (Shift + Enter for new line)"
+              }
               rows={1}
               className="flex-1 bg-transparent px-2 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none resize-none max-h-48 leading-relaxed"
             />

@@ -219,7 +219,7 @@ export function DocumentsView({
             Click to upload or drag & drop files here
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Supports <span className="font-medium text-zinc-700 dark:text-zinc-300">PDF, DOCX, and TXT</span> (up to 50MB per file)
+            Supports <span className="font-medium text-zinc-700 dark:text-zinc-300">PDF, DOCX, and TXT</span> (up to 4 MB per file)
           </p>
         </div>
 

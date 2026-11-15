@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   X,
   Sliders,
@@ -8,14 +8,19 @@ import {
   Moon,
   Laptop,
   MessageSquare,
-  User,
+  Shield,
   Info,
   Check,
   CheckCircle,
   Trash2,
   AlertTriangle,
+  HardDrive,
+  Zap,
+  Download,
+  Upload,
 } from "lucide-react";
-import { AppSettings, ThemePreference } from "@/types/chat";
+import { AppSettings, ThemePreference, StorageMode } from "@/types/chat";
+import { exportStoredData, importStoredData } from "@/lib/storage";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -25,7 +30,7 @@ interface SettingsModalProps {
   onThemeChange: (theme: ThemePreference) => void;
 }
 
-type TabKey = "appearance" | "general" | "chat" | "account" | "about";
+type TabKey = "appearance" | "general" | "chat" | "storage" | "about";
 
 export function SettingsModal({
   isOpen,
@@ -40,11 +45,46 @@ export function SettingsModal({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isDeletingData, setIsDeletingData] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportData = () => {
+    const jsonString = exportStoredData();
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `khabri-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const result = importStoredData(content);
+      if (result.success) {
+        setImportStatus(
+          `Restored ${result.count?.conversations || 0} chats & ${result.count?.documents || 0} documents. Reloading...`
+        );
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        setImportStatus(result.message);
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const handleDeleteMyData = async () => {
     if (
       !window.confirm(
-        "Are you sure you want to permanently delete all your uploaded documents and conversation history? This cannot be undone."
+        "Are you sure you want to permanently delete all your uploaded documents, embeddings, and conversation history? This cannot be undone."
       )
     ) {
       return;
@@ -53,7 +93,8 @@ export function SettingsModal({
     try {
       const res = await fetch("/api/session", { method: "DELETE" });
       if (res.ok) {
-        setDeleteMessage("All session data permanently deleted. Reloading...");
+        localStorage.clear();
+        setDeleteMessage("All session and local data permanently deleted. Reloading...");
         setTimeout(() => {
           window.location.reload();
         }, 1200);
@@ -96,7 +137,7 @@ export function SettingsModal({
     { key: "appearance", label: "Appearance", icon: Sun },
     { key: "general", label: "General", icon: Sliders },
     { key: "chat", label: "Chat & Retrieval", icon: MessageSquare },
-    { key: "account", label: "Account Profile", icon: User },
+    { key: "storage", label: "Privacy & Storage", icon: Shield },
     { key: "about", label: "About", icon: Info },
   ];
 
@@ -298,89 +339,101 @@ export function SettingsModal({
               </div>
             )}
 
-            {/* ACCOUNT TAB */}
-            {activeTab === "account" && (
+            {/* PRIVACY & STORAGE TAB */}
+            {activeTab === "storage" && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-100 mb-1">
-                    Account Information
+                    Privacy & Storage Strategy
                   </h3>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    Update profile credentials and permissions.
+                    Control how your conversations, documents, and search vectors are retained.
                   </p>
                 </div>
 
-                <div className="space-y-3 pt-2">
-                  <div>
-                    <label className="block font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.user.name}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          user: { ...formData.user, name: e.target.value },
-                        })
-                      }
-                      className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
-                    />
+                {/* Storage Architecture Overview */}
+                <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/40">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <HardDrive className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      Local-First Architecture
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ml-auto">
+                      Default
+                    </span>
                   </div>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                    By default, your chats and document history are preserved directly inside your browser cache (<code className="font-mono text-[10px]">localStorage</code>), keeping zero persistent strain on the cloud database. For one-time zero-trace sessions, start an <strong>Incognito Chat</strong> directly from the sidebar.
+                  </p>
+                </div>
 
-                  <div>
-                    <label className="block font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.user.email}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          user: { ...formData.user, email: e.target.value },
-                        })
-                      }
-                      className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-zinc-600"
-                    />
-                  </div>
+                {/* Local Data Portability (Export / Import) */}
+                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <label className="block text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                    Offline Backup & Portability
+                  </label>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Download an offline backup of your conversations or restore previously exported data.
+                  </p>
 
-                  <div>
-                    <label className="block font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-                      Workspace Role
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.user.role}
-                      disabled
-                      className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-xs text-zinc-500 outline-none cursor-not-allowed"
-                    />
-                  </div>
-
-                  {/* PRIVACY & DATA PURGE */}
-                  <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                    <div className="flex items-center gap-2 mb-1.5 text-red-600 dark:text-red-400">
-                      <AlertTriangle className="w-4 h-4 shrink-0" />
-                      <span className="text-xs font-semibold">Privacy & Data Purge</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-3 leading-relaxed">
-                      Permanently wipe all documents, embeddings, and conversation records associated with your anonymous session.
-                    </p>
-                    {deleteMessage && (
-                      <div className="mb-2.5 p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[11px] font-medium text-zinc-800 dark:text-zinc-200">
-                        {deleteMessage}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2 pt-1">
                     <button
                       type="button"
-                      onClick={handleDeleteMyData}
-                      disabled={isDeletingData}
-                      className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/70 border border-red-200 dark:border-red-900/50 transition-colors disabled:opacity-50"
+                      onClick={handleExportData}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      {isDeletingData ? "Purging Session Data..." : "Delete My Data"}
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export History (JSON)</span>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Import Backup (JSON)</span>
+                    </button>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileImport}
+                      accept="application/json"
+                      className="hidden"
+                    />
                   </div>
+
+                  {importStatus && (
+                    <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[11px] font-medium text-zinc-800 dark:text-zinc-200">
+                      {importStatus}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cloud Data Purge */}
+                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                  <div className="flex items-center gap-2 mb-1 text-red-600 dark:text-red-400">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span className="text-xs font-semibold">Immediate Cloud Purge</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-2 leading-relaxed">
+                    Permanently wipe all documents, vector chunks, and messages from the Neon Postgres database.
+                  </p>
+                  {deleteMessage && (
+                    <div className="mb-2 p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[11px] font-medium text-zinc-800 dark:text-zinc-200">
+                      {deleteMessage}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleDeleteMyData}
+                    disabled={isDeletingData}
+                    className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/70 border border-red-200 dark:border-red-900/50 transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {isDeletingData ? "Purging Data..." : "Purge All Cloud & Local Data"}
+                  </button>
                 </div>
               </div>
             )}
@@ -390,17 +443,17 @@ export function SettingsModal({
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-100 mb-1">
-                    About Knowbase AI
+                    About Khabri RAG
                   </h3>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    Enterprise Retrieval-Augmented Generation Architecture.
+                    Zero-Cost, Production-Hardened Retrieval-Augmented Generation Architecture.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/40 space-y-3">
+                <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/40 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-zinc-900 dark:text-zinc-100">Application Version</span>
-                    <span className="font-mono text-xs">v2.5.0</span>
+                    <span className="font-mono text-xs">v1.0.0 (Production)</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-zinc-900 dark:text-zinc-100">Framework</span>
@@ -412,12 +465,16 @@ export function SettingsModal({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-zinc-900 dark:text-zinc-100">Target Vector Store</span>
-                    <span className="font-mono text-xs">Neon PostgreSQL (pgvector)</span>
+                    <span className="font-mono text-xs">Neon PostgreSQL (pgvector HNSW)</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">Inference Chain</span>
+                    <span className="font-mono text-xs">OpenRouter Multi-Model Fallback</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 text-xs leading-relaxed">
-                  Theme switching, knowledge indexing, and chat UI are fully synchronized.
+                  100% open-source and free-tier optimized. "The cheapest token is the one never sent."
                 </div>
               </div>
             )}

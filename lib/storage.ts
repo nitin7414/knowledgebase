@@ -113,3 +113,64 @@ export const saveStoredSidebarCollapsed = (collapsed: boolean) => {
   }
 };
 
+/**
+ * Data management utilities for Local-First and Ephemeral privacy modes
+ */
+export const clearStoredData = () => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.CONVERSATIONS);
+    localStorage.removeItem(STORAGE_KEYS.DOCUMENTS);
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_CONVERSATION_ID);
+  } catch (err) {
+    console.error("Failed to clear local storage", err);
+  }
+};
+
+export const exportStoredData = (): string => {
+  if (typeof window === "undefined") return "";
+  const conversations = getStoredConversations();
+  const documents = getStoredDocuments();
+  const exportPayload = {
+    app: "Khabri RAG",
+    version: "1.0",
+    exportedAt: new Date().toISOString(),
+    conversations,
+    documents,
+  };
+  return JSON.stringify(exportPayload, null, 2);
+};
+
+export const importStoredData = (
+  rawJson: string
+): { success: boolean; message: string; count?: { conversations: number; documents: number } } => {
+  if (typeof window === "undefined") return { success: false, message: "Browser environment required." };
+  try {
+    const parsed = JSON.parse(rawJson);
+    if (!parsed || (typeof parsed !== "object")) {
+      return { success: false, message: "Invalid JSON format." };
+    }
+
+    if (Array.isArray(parsed.conversations)) {
+      saveStoredConversations(parsed.conversations);
+    }
+    if (Array.isArray(parsed.documents)) {
+      saveStoredDocuments(parsed.documents);
+    }
+
+    return {
+      success: true,
+      message: "Data successfully restored to local browser storage.",
+      count: {
+        conversations: Array.isArray(parsed.conversations) ? parsed.conversations.length : 0,
+        documents: Array.isArray(parsed.documents) ? parsed.documents.length : 0,
+      },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Failed to parse JSON backup file.",
+    };
+  }
+};
+

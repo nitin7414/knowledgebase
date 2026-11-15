@@ -20,6 +20,7 @@ export interface Conversation {
   updatedAt: string;
   messages: ChatMessage[];
   pinned?: boolean;
+  isIncognito?: boolean;
 }
 
 export type DocumentStatus = "ready" | "indexing" | "failed";
@@ -37,14 +38,16 @@ export interface DocumentItem {
 }
 
 export type ThemePreference = "light" | "dark" | "system";
+export type StorageMode = "ephemeral" | "local";
 
 export interface AppSettings {
   theme: ThemePreference;
+  storageMode: StorageMode;
   systemPrompt: string;
   searchDepth: "fast" | "balanced" | "deep";
   streamingSpeed: "normal" | "fast" | "instant";
   autoScroll: boolean;
-  user: {
+  user?: {
     name: string;
     email: string;
     role: string;

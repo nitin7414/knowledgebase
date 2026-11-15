@@ -1,0 +1,18 @@
+# Q3 2026 Enterprise Sales Compensation & Commission Policy (Distractor)
+
+## Section 1: Regional Quota Targets & Baseline Commission
+The Q3 2026 sales commission structure incentivizes annual multi-workspace enterprise contract expansions:
+1. North America Enterprise Territory: Baseline quota of $2.2M per Account Executive. Baseline commission rate is 10.5% on recognized net new annual contract value (ACV).
+2. EMEA Enterprise Territory: Baseline quota of €1.8M per AE. Baseline commission rate is 11.0% on net recognized revenue.
+3. APAC Regional Territory: Fastest accelerating market with a baseline quota of $1.2M per AE and a 12.0% commission baseline.
+
+## Section 2: Quota Accelerators & Multi-Year Incentives
+Account Executives who exceed 100% of quarterly quota unlock progressive commission accelerators:
+- 101% to 125% of Quota: 1.5x commission multiplier applied to all revenue booked beyond quota target.
+- 126% to 150% of Quota: 2.0x commission multiplier applied to incremental bookings.
+- Contracts signed with upfront 3-year commitments receive an additional 3.0% margin kicker bonus.
+
+## Section 3: Clawback & Revenue Recognition Timing
+Commissions are distributed within two payroll cycles following customer invoice payment.
+If an enterprise subscription contract churns or terminates within the first 90 days, 100% of the commission paid is subject to unearned clawback deductions from future cycles.
+

@@ -61,3 +61,7 @@ export async function getCachedQueryEmbedding(rawQuery: string): Promise<{
   };
 }
 
+export function clearQueryEmbeddingCache(): void {
+  queryEmbeddingCache.clear();
+}
+

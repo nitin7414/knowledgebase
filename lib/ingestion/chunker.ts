@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { countTokens } from "../tokens";
 import { ParsedPage } from "./parsers";
+import { RAG_CONFIG } from "../rag/config";
 
 export interface DocumentChunk {
   chunkIndex: number;
@@ -12,8 +13,8 @@ export interface DocumentChunk {
 }
 
 interface ChunkerOptions {
-  targetTokens?: number; // default ~400
-  overlapTokens?: number; // default ~50 (~12%)
+  targetTokens?: number; // default RAG_CONFIG.chunking.targetTokens (400)
+  overlapTokens?: number; // default ~12% (~48 tokens)
   minTokens?: number; // default ~20 (drop near-empty)
 }
 
@@ -45,8 +46,10 @@ export function chunkPages(
   pages: ParsedPage[],
   options: ChunkerOptions = {}
 ): DocumentChunk[] {
-  const targetTokens = options.targetTokens ?? 400;
-  const overlapTokens = options.overlapTokens ?? 48; // ~12%
+  const targetTokens = options.targetTokens ?? RAG_CONFIG.chunking.targetTokens;
+  const overlapTokens =
+    options.overlapTokens ??
+    Math.round(targetTokens * RAG_CONFIG.chunking.overlapPercent);
   const minTokens = options.minTokens ?? 20;
 
   const chunks: DocumentChunk[] = [];

@@ -2,15 +2,11 @@ import { Conversation, DocumentItem, AppSettings } from "@/types/chat";
 
 export const INITIAL_SETTINGS: AppSettings = {
   theme: "system",
-  systemPrompt: "You are Knowbase AI, an intelligent knowledge assistant that answers queries with citations from verified documents.",
+  storageMode: "local",
+  systemPrompt: "You are Khabri, a verified knowledge assistant that answers queries with citations from provided documents. Refuse if not in context.",
   searchDepth: "balanced",
   streamingSpeed: "normal",
   autoScroll: true,
-  user: {
-    name: "Alex Vance",
-    email: "alex.vance@company.ai",
-    role: "Knowledge Lead",
-  },
 };
 
 export const INITIAL_DOCUMENTS: DocumentItem[] = [

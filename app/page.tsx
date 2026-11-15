@@ -68,6 +68,23 @@ export default function Home() {
     }
   }, [isClient, settings.theme, applyTheme]);
 
+  // Handle Ephemeral / Incognito Session: Purge cloud session on tab close if incognito chat was used
+  useEffect(() => {
+    if (!isClient) return;
+
+    const handleBeforeUnload = () => {
+      const hasIncognito = conversations.some((c) => c.isIncognito);
+      if (hasIncognito) {
+        navigator.sendBeacon("/api/session");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isClient, conversations]);
+
   // Fetch initial documents & conversations from backend on mount
   useEffect(() => {
     if (!isClient) return;
@@ -99,10 +116,10 @@ export default function Home() {
       .catch((err) => console.warn("Could not sync conversations from server:", err));
   }, [isClient]);
 
-  // Sync state changes with persistence
+  // Sync state changes with persistence (only save local-first chats to browser storage)
   const updateConversations = (newConvs: Conversation[]) => {
     setConversations(newConvs);
-    saveStoredConversations(newConvs);
+    saveStoredConversations(newConvs.filter((c) => !c.isIncognito));
   };
 
   const handleSelectConversation = (id: string) => {
@@ -111,6 +128,7 @@ export default function Home() {
     setViewMode("chat");
   };
 
+  // Standard Local-First New Chat
   const handleNewChat = () => {
     const newId = `conv-${Date.now()}`;
     const newConv: Conversation = {
@@ -119,6 +137,7 @@ export default function Home() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       messages: [],
+      isIncognito: false,
     };
     const updated = [newConv, ...conversations];
     updateConversations(updated);
@@ -132,6 +151,24 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: "New Conversation" }),
     }).catch(() => {});
+  };
+
+  // Ephemeral Incognito Chat (Zero local storage, auto-purged)
+  const handleNewIncognitoChat = () => {
+    const newId = `conv-${Date.now()}-incognito`;
+    const newConv: Conversation = {
+      id: newId,
+      title: "🕵️ Incognito Chat",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [],
+      isIncognito: true,
+    };
+    const updated = [newConv, ...conversations];
+    setConversations(updated);
+    setActiveConvId(newId);
+    saveStoredActiveConvId(newId);
+    setViewMode("chat");
   };
 
   const handleRenameConversation = async (id: string, newTitle: string) => {
@@ -309,7 +346,7 @@ export default function Home() {
           }
           return conv;
         });
-        saveStoredConversations(finalized);
+        saveStoredConversations(finalized.filter((c) => !c.isIncognito));
         return finalized;
       });
     } catch (err: unknown) {
@@ -333,7 +370,7 @@ export default function Home() {
           }
           return conv;
         });
-        saveStoredConversations(finalized);
+        saveStoredConversations(finalized.filter((c) => !c.isIncognito));
         return finalized;
       });
     } finally {
@@ -461,6 +498,7 @@ export default function Home() {
         activeConversationId={activeConvId}
         onSelectConversation={handleSelectConversation}
         onNewChat={handleNewChat}
+        onNewIncognitoChat={handleNewIncognitoChat}
         onRenameConversation={handleRenameConversation}
         onDeleteConversation={handleDeleteConversation}
         currentView={viewMode}
@@ -484,6 +522,7 @@ export default function Home() {
             onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
             documents={documents}
             settings={settings}
+            onNavigateToDocuments={() => setViewMode("documents")}
           />
         ) : (
           <DocumentsView

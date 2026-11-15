@@ -1,10 +1,13 @@
 import { HybridSearchResult } from "./hybrid-search";
+import { RAG_CONFIG } from "./config";
 
 export interface ContextSelectorOptions {
-  tokenBudget?: number; // default ~2500
-  rrfThreshold?: number; // default ~0.012
-  similarityThreshold?: number; // default ~0.35
-  diversityLambda?: number; // 0.7 balances relevance vs diversity
+  tokenBudget?: number; // default RAG_CONFIG.retrieval.contextTokenBudget (2500)
+  rrfThreshold?: number; // default RAG_CONFIG.retrieval.similarityThreshold (0.015)
+  similarityThreshold?: number; // default RAG_CONFIG.retrieval.refusalCosineFloor (0.68)
+  diversityLambda?: number; // default RAG_CONFIG.retrieval.dedupOverlapThreshold (0.75)
+  enableNearDuplicatePruning?: boolean; // default true (Jaccard near-duplicate pruning)
+  chronologicalReorder?: boolean; // default true (sort by documentId + chunkIndex)
 }
 
 export interface SelectedContext {
@@ -47,7 +50,7 @@ function calculateTextSimilarity(a: string, b: string): number {
 /**
  * Selects and packs context chunks:
  * 1. Filters chunks below RRF / vector similarity threshold.
- * 2. Applies MMR-style diversity suppression on near-duplicates.
+ * 2. Applies near-duplicate pruning (Jaccard similarity suppression).
  * 3. Greedily packs up to tokenBudget.
  * 4. Reorders selected chunks by original document position (documentId + chunkIndex)
  *    so the assembled context flows coherently.
@@ -58,16 +61,23 @@ export function selectContextChunks(
 ): SelectedContext {
   const tokenBudget =
     options.tokenBudget ??
-    Number(process.env.RAG_CONTEXT_TOKEN_BUDGET || 2500);
+    (process.env.RAG_CONTEXT_TOKEN_BUDGET
+      ? Number(process.env.RAG_CONTEXT_TOKEN_BUDGET)
+      : RAG_CONFIG.retrieval.contextTokenBudget);
   const rrfThreshold =
     options.rrfThreshold ??
-    Number(process.env.RAG_RRF_THRESHOLD || 0.015);
+    (process.env.RAG_RRF_THRESHOLD
+      ? Number(process.env.RAG_RRF_THRESHOLD)
+      : RAG_CONFIG.retrieval.similarityThreshold);
   const similarityThreshold =
     options.similarityThreshold ??
     (process.env.RAG_VECTOR_SIMILARITY_THRESHOLD
       ? Number(process.env.RAG_VECTOR_SIMILARITY_THRESHOLD)
-      : 0.55);
-  const diversityLambda = options.diversityLambda ?? 0.75;
+      : RAG_CONFIG.retrieval.refusalCosineFloor);
+  const diversityLambda =
+    options.diversityLambda ?? RAG_CONFIG.retrieval.dedupOverlapThreshold;
+  const enableNearDuplicatePruning = options.enableNearDuplicatePruning ?? true;
+  const chronologicalReorder = options.chronologicalReorder ?? true;
 
   // 1. Filter below threshold
   const filtered = candidates.filter((c) => {
@@ -91,12 +101,12 @@ export function selectContextChunks(
     };
   }
 
-  // 2. MMR Diversity Selection
+  // 2. Near-Duplicate Pruning & Diversity Selection
   const selected: HybridSearchResult[] = [];
   const remaining = [...filtered];
   let accumulatedTokens = 0;
 
-  // Normalize RRF scores across candidates for MMR calculation
+  // Normalize RRF scores across candidates for scoring
   const maxRrf = Math.max(...remaining.map((r) => r.rrfScore), 0.001);
 
   while (remaining.length > 0 && accumulatedTokens < tokenBudget) {
@@ -117,7 +127,7 @@ export function selectContextChunks(
       }
 
       // Suppress near-identical duplicate chunks (> 75% word overlap)
-      if (maxSimToSelected > 0.75) {
+      if (enableNearDuplicatePruning && maxSimToSelected > 0.75) {
         continue;
       }
 
@@ -148,15 +158,17 @@ export function selectContextChunks(
   }
 
   // 3. Reorder selected chunks by document position so context reads coherently
-  const reordered = [...selected].sort((a, b) => {
-    if (a.documentId !== b.documentId) {
-      return a.documentId.localeCompare(b.documentId);
-    }
-    return a.chunkIndex - b.chunkIndex;
-  });
+  const finalChunks = chronologicalReorder
+    ? [...selected].sort((a, b) => {
+        if (a.documentId !== b.documentId) {
+          return a.documentId.localeCompare(b.documentId);
+        }
+        return a.chunkIndex - b.chunkIndex;
+      })
+    : selected;
 
   return {
-    chunks: reordered,
+    chunks: finalChunks,
     totalTokens: accumulatedTokens,
     droppedCount: candidates.length - selected.length,
     passedThreshold: true,

@@ -4,8 +4,9 @@ import { validateFileMagic } from "./magic";
 import { parseDocumentBuffer } from "./parsers";
 import { chunkPages } from "./chunker";
 import { getEmbeddingProvider } from "../ai/gemini-embeddings";
+import { RAG_CONFIG } from "../rag/config";
 
-const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4.0 MB strict serverless ceiling (Vercel max payload: 4.5 MB)
+const MAX_FILE_SIZE = RAG_CONFIG.chunking.maxFileSizeMB * 1024 * 1024; // 4.0 MB strict serverless ceiling (Vercel max payload: 4.5 MB)
 const MAX_PAGES = 100;
 
 export interface IngestionResult {
@@ -28,7 +29,9 @@ export async function ingestDocumentFile(
 ): Promise<IngestionResult> {
   // 1. File size check
   if (buffer.length > MAX_FILE_SIZE) {
-    throw new Error(`File size (${(buffer.length / 1024 / 1024).toFixed(1)} MB) exceeds maximum limit of 10 MB.`);
+    throw new Error(
+      `File size (${(buffer.length / 1024 / 1024).toFixed(1)} MB) exceeds maximum limit of ${RAG_CONFIG.chunking.maxFileSizeMB.toFixed(1)} MB.`
+    );
   }
 
   // 2. Magic byte check
