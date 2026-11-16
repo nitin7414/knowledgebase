@@ -4,7 +4,6 @@ import { RAG_CONFIG } from "@/lib/rag/config";
 import { getEmbeddingProvider } from "@/lib/ai/gemini-embeddings";
 import { getValidModelChain } from "@/lib/ai/openrouter";
 
-export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 export async function GET() {
