@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || createRequestId();
 
   try {
-    const sessionId = await getOrCreateSessionId();
+    const sessionId = await getOrCreateSessionId(req);
     const body = await req.json();
     const parsed = ChatRequestSchema.safeParse(body);
 
@@ -335,7 +335,10 @@ export async function POST(req: NextRequest) {
     });
 
     // 8. Context Selection with MMR & token budget
-    const selection = selectContextChunks(candidates);
+    const selection = selectContextChunks(candidates, {
+      query: message,
+      hasExplicitDocScope: Boolean(documentIds && documentIds.length > 0),
+    });
 
     // If no chunks passed threshold, short-circuit with refusal (0 LLM generation tokens!)
     if (!selection.passedThreshold || selection.chunks.length === 0) {

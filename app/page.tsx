@@ -13,6 +13,8 @@ import {
   saveStoredSettings,
   getStoredSidebarCollapsed,
   saveStoredSidebarCollapsed,
+  getSessionHeaders,
+  saveStoredSessionId,
 } from "@/lib/storage";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { ChatArea } from "@/components/chat/ChatArea";
@@ -90,10 +92,13 @@ export default function Home() {
     if (!isClient) return;
 
     // 1. Fetch real documents from database
-    fetch("/api/documents")
+    fetch("/api/documents", { headers: getSessionHeaders() })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.documents && Array.isArray(data.documents) && data.documents.length > 0) {
+        if (data?.sessionId) {
+          saveStoredSessionId(data.sessionId);
+        }
+        if (data && Array.isArray(data.documents)) {
           setDocuments(data.documents);
           saveStoredDocuments(data.documents);
         }
@@ -101,7 +106,7 @@ export default function Home() {
       .catch((err) => console.warn("Could not sync documents from server:", err));
 
     // 2. Fetch conversations from database
-    fetch("/api/conversations")
+    fetch("/api/conversations", { headers: getSessionHeaders() })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.conversations && Array.isArray(data.conversations) && data.conversations.length > 0) {
@@ -214,7 +219,8 @@ export default function Home() {
   const streamChatResponse = async (
     targetConvId: string,
     userQuery: string,
-    attachments?: string[]
+    attachments?: string[],
+    documentIds?: string[]
   ) => {
     setIsLoading(true);
     const assistantMsgId = `msg-${Date.now()}-a`;
@@ -244,10 +250,14 @@ export default function Home() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getSessionHeaders(),
+        },
         body: JSON.stringify({
           message: userQuery,
           conversationId: targetConvId,
+          documentIds: documentIds && documentIds.length > 0 ? documentIds : undefined,
         }),
       });
 
@@ -378,7 +388,11 @@ export default function Home() {
     }
   };
 
-  const handleSendMessage = (content: string, attachments?: string[]) => {
+  const handleSendMessage = (
+    content: string,
+    attachments?: string[],
+    documentIds?: string[]
+  ) => {
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}-u`,
       role: "user",
@@ -421,7 +435,7 @@ export default function Home() {
     updateConversations(nextConvs);
 
     // Call real streaming RAG backend
-    streamChatResponse(targetConv.id, content, attachments);
+    streamChatResponse(targetConv.id, content, attachments, documentIds);
   };
 
   const handleRegenerateResponse = (conversationId: string) => {
@@ -448,24 +462,37 @@ export default function Home() {
   };
 
   const handleAddDocument = (newDoc: DocumentItem) => {
-    const exists = documents.some((d) => d.id === newDoc.id);
-    let updatedDocs: DocumentItem[];
-    if (exists) {
-      updatedDocs = documents.map((d) => (d.id === newDoc.id ? newDoc : d));
-    } else {
-      updatedDocs = [newDoc, ...documents];
-    }
-    setDocuments(updatedDocs);
-    saveStoredDocuments(updatedDocs);
+    setDocuments((prevDocs) => {
+      const exists = prevDocs.some((d) => d.id === newDoc.id);
+      const next = exists
+        ? prevDocs.map((d) => (d.id === newDoc.id ? newDoc : d))
+        : [newDoc, ...prevDocs];
+      saveStoredDocuments(next);
+      return next;
+    });
+  };
+
+  const handleReplaceDocument = (oldId: string, newDoc: DocumentItem) => {
+    setDocuments((prevDocs) => {
+      const filtered = prevDocs.filter((d) => d.id !== oldId && d.id !== newDoc.id);
+      const next = [newDoc, ...filtered];
+      saveStoredDocuments(next);
+      return next;
+    });
   };
 
   const handleDeleteDocument = async (id: string) => {
-    const updated = documents.filter((d) => d.id !== id);
-    setDocuments(updated);
-    saveStoredDocuments(updated);
+    setDocuments((prevDocs) => {
+      const next = prevDocs.filter((d) => d.id !== id);
+      saveStoredDocuments(next);
+      return next;
+    });
 
     try {
-      await fetch(`/api/documents/${id}`, { method: "DELETE" });
+      await fetch(`/api/documents/${id}`, {
+        method: "DELETE",
+        headers: getSessionHeaders(),
+      });
     } catch (err) {
       console.warn("Failed to delete document from server:", err);
     }
@@ -523,11 +550,15 @@ export default function Home() {
             documents={documents}
             settings={settings}
             onNavigateToDocuments={() => setViewMode("documents")}
+            onAddDocument={handleAddDocument}
+            onReplaceDocument={handleReplaceDocument}
+            onDeleteDocument={handleDeleteDocument}
           />
         ) : (
           <DocumentsView
             documents={documents}
             onAddDocument={handleAddDocument}
+            onReplaceDocument={handleReplaceDocument}
             onDeleteDocument={handleDeleteDocument}
             onBackToChat={() => setViewMode("chat")}
             onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}

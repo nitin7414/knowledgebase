@@ -9,63 +9,7 @@ export const INITIAL_SETTINGS: AppSettings = {
   autoScroll: true,
 };
 
-export const INITIAL_DOCUMENTS: DocumentItem[] = [
-  {
-    id: "doc-1",
-    name: "Q3_2026_Financial_Audit_Report.pdf",
-    type: "pdf",
-    sizeBytes: 4288120, // 4.1 MB
-    uploadDate: "2026-10-28T09:30:00Z",
-    status: "ready",
-    tokenCount: 42150,
-    chunkCount: 86,
-    description: "Audited financial statements and revenue breakdown across North American and European business units.",
-  },
-  {
-    id: "doc-2",
-    name: "Enterprise_Security_Architecture_v4.docx",
-    type: "docx",
-    sizeBytes: 1845100, // 1.8 MB
-    uploadDate: "2026-10-25T14:15:00Z",
-    status: "ready",
-    tokenCount: 19800,
-    chunkCount: 42,
-    description: "SOC2 Type II compliance controls, zero-trust network policies, and API encryption requirements.",
-  },
-  {
-    id: "doc-3",
-    name: "Product_Roadmap_2026_2027.pdf",
-    type: "pdf",
-    sizeBytes: 6724300, // 6.4 MB
-    uploadDate: "2026-10-20T11:00:00Z",
-    status: "ready",
-    tokenCount: 58900,
-    chunkCount: 118,
-    description: "Multi-quarter strategic deliverables, RAG vector pipeline upgrades, and agentic workflows.",
-  },
-  {
-    id: "doc-4",
-    name: "Customer_Support_SOP_Runbook.txt",
-    type: "txt",
-    sizeBytes: 341200, // 333 KB
-    uploadDate: "2026-10-15T16:45:00Z",
-    status: "ready",
-    tokenCount: 8200,
-    chunkCount: 18,
-    description: "Standard operating procedures for tier-1 & tier-2 escalation protocols, incident tagging, and SLA resolution times.",
-  },
-  {
-    id: "doc-5",
-    name: "Vendor_Procurement_Guidelines_2026.docx",
-    type: "docx",
-    sizeBytes: 982000, // 958 KB
-    uploadDate: "2026-10-12T10:10:00Z",
-    status: "indexing",
-    tokenCount: 11400,
-    chunkCount: 24,
-    description: "Purchasing thresholds, RFP evaluation rubric, and standard MSA terms for cloud service vendors.",
-  },
-];
+export const INITIAL_DOCUMENTS: DocumentItem[] = [];
 
 // Helper timestamps to reliably generate Today, Yesterday, Previous 7 Days, Older
 const now = new Date();

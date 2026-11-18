@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { getOrCreateSessionId } from "@/lib/session";
+import { getOrCreateSessionId, signSessionId } from "@/lib/session";
 import { ingestDocumentFile } from "@/lib/ingestion/pipeline";
 import { checkUploadRateLimits, getClientIp } from "@/lib/ratelimit";
 import { createRequestId, logEvent } from "@/lib/logger";
@@ -8,9 +8,9 @@ import { RAG_CONFIG } from "@/lib/rag/config";
 
 export const maxDuration = 60; // Allow sufficient serverless execution time for large docs
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const sessionId = await getOrCreateSessionId();
+    const sessionId = await getOrCreateSessionId(req);
 
     const docs = await prisma.document.findMany({
       where: { sessionId },
@@ -47,7 +47,10 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ documents: formatted });
+    return NextResponse.json(
+      { documents: formatted, sessionId },
+      { headers: { "X-Session-Id": signSessionId(sessionId) } }
+    );
   } catch (err: unknown) {
     console.error("GET /api/documents error:", err);
     return NextResponse.json(
@@ -62,7 +65,7 @@ export async function POST(req: NextRequest) {
   const reqId = req.headers.get("x-request-id") || createRequestId();
 
   try {
-    const sessionId = await getOrCreateSessionId();
+    const sessionId = await getOrCreateSessionId(req);
     const clientIp = getClientIp(req);
 
     // Rate limit check: uploads per hour
@@ -170,6 +173,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
+        sessionId,
         document: {
           id: result.documentId,
           name: result.filename,
@@ -184,7 +188,12 @@ export async function POST(req: NextRequest) {
           description: result.message || `Indexed ${result.chunkCount} vector chunks.`,
         },
       },
-      { headers: { "X-Request-Id": reqId } }
+      {
+        headers: {
+          "X-Request-Id": reqId,
+          "X-Session-Id": signSessionId(sessionId),
+        },
+      }
     );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

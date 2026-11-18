@@ -169,17 +169,21 @@ async function runSessionIsolationTest() {
   } finally {
     // Cleanup test data
     console.log("\n🧹 Cleaning up test fixtures...");
-    await withDbRetry(async () => {
-      await prisma.chunk.deleteMany({
+    await withDbRetry(() =>
+      prisma.chunk.deleteMany({
         where: { document: { sessionId: { in: [sessionA, sessionB] } } },
-      });
-      await prisma.document.deleteMany({
+      })
+    ).catch(() => {});
+    await withDbRetry(() =>
+      prisma.document.deleteMany({
         where: { sessionId: { in: [sessionA, sessionB] } },
-      });
-      await prisma.conversation.deleteMany({
+      })
+    ).catch(() => {});
+    await withDbRetry(() =>
+      prisma.conversation.deleteMany({
         where: { sessionId: { in: [sessionA, sessionB] } },
-      });
-    });
+      })
+    ).catch(() => {});
     console.log("  ✓ Test artifacts purged.");
   }
 }

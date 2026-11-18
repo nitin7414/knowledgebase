@@ -52,16 +52,15 @@ export const saveStoredActiveConvId = (id: string) => {
 };
 
 export const getStoredDocuments = (): DocumentItem[] => {
-  if (typeof window === "undefined") return INITIAL_DOCUMENTS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(INITIAL_DOCUMENTS));
-      return INITIAL_DOCUMENTS;
+      return [];
     }
     return JSON.parse(raw);
   } catch {
-    return INITIAL_DOCUMENTS;
+    return [];
   }
 };
 
@@ -72,6 +71,29 @@ export const saveStoredDocuments = (docs: DocumentItem[]) => {
   } catch (err) {
     console.error("Failed to save documents to localStorage", err);
   }
+};
+
+export const getStoredSessionId = (): string | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("khabri_session_id");
+  } catch {
+    return null;
+  }
+};
+
+export const saveStoredSessionId = (sessionId: string) => {
+  if (typeof window === "undefined" || !sessionId) return;
+  try {
+    localStorage.setItem("khabri_session_id", sessionId);
+  } catch {
+    // ignore
+  }
+};
+
+export const getSessionHeaders = (): Record<string, string> => {
+  const sessionId = getStoredSessionId();
+  return sessionId ? { "x-session-id": sessionId } : {};
 };
 
 export const getStoredSettings = (): AppSettings => {

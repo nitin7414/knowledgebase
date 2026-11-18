@@ -8,6 +8,8 @@ export interface ContextSelectorOptions {
   diversityLambda?: number; // default RAG_CONFIG.retrieval.dedupOverlapThreshold (0.75)
   enableNearDuplicatePruning?: boolean; // default true (Jaccard near-duplicate pruning)
   chronologicalReorder?: boolean; // default true (sort by documentId + chunkIndex)
+  query?: string;
+  hasExplicitDocScope?: boolean;
 }
 
 export interface SelectedContext {
@@ -69,11 +71,24 @@ export function selectContextChunks(
     (process.env.RAG_RRF_THRESHOLD
       ? Number(process.env.RAG_RRF_THRESHOLD)
       : RAG_CONFIG.retrieval.similarityThreshold);
-  const similarityThreshold =
+  const baseSimilarityThreshold =
     options.similarityThreshold ??
     (process.env.RAG_VECTOR_SIMILARITY_THRESHOLD
       ? Number(process.env.RAG_VECTOR_SIMILARITY_THRESHOLD)
       : RAG_CONFIG.retrieval.refusalCosineFloor);
+
+  // If the user is asking a broad overview/summary question or scoped to a specific document,
+  // allow relevant intro/top passages with relaxed threshold (0.55) so the file can be summarized.
+  const isBroadQuery = Boolean(
+    options.query &&
+    /\b(?:summarize|summary|overview|what is (?:this|the) (?:file|doc|document) about|topics? covered|outline|explain (?:this|the) (?:file|doc)|what does (?:this|the) (?:file|doc|document) (?:say|discuss|contain|talk about)|what is inside)\b/i.test(
+      options.query
+    )
+  );
+  const similarityThreshold = isBroadQuery || options.hasExplicitDocScope
+    ? Math.min(baseSimilarityThreshold, 0.55)
+    : baseSimilarityThreshold;
+
   const diversityLambda =
     options.diversityLambda ?? RAG_CONFIG.retrieval.dedupOverlapThreshold;
   const enableNearDuplicatePruning = options.enableNearDuplicatePruning ?? true;

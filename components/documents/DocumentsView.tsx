@@ -18,10 +18,12 @@ import {
   Plus,
 } from "lucide-react";
 import { DocumentItem } from "@/types/chat";
+import { getSessionHeaders, saveStoredSessionId } from "@/lib/storage";
 
 interface DocumentsViewProps {
   documents: DocumentItem[];
   onAddDocument: (doc: DocumentItem) => void;
+  onReplaceDocument?: (oldId: string, newDoc: DocumentItem) => void;
   onDeleteDocument: (id: string) => void;
   onBackToChat: () => void;
   onToggleMobileSidebar: () => void;
@@ -30,6 +32,7 @@ interface DocumentsViewProps {
 export function DocumentsView({
   documents,
   onAddDocument,
+  onReplaceDocument,
   onDeleteDocument,
   onBackToChat,
   onToggleMobileSidebar,
@@ -112,6 +115,7 @@ export function DocumentsView({
 
         const res = await fetch("/api/documents", {
           method: "POST",
+          headers: getSessionHeaders(),
           body: formData,
         });
 
@@ -120,18 +124,34 @@ export function DocumentsView({
           throw new Error(data.message || data.error || "Upload failed");
         }
 
+        if (data.sessionId) {
+          saveStoredSessionId(data.sessionId);
+        }
+
         if (data.document) {
-          onDeleteDocument(tempId);
-          onAddDocument(data.document);
+          if (onReplaceDocument) {
+            onReplaceDocument(tempId, data.document);
+          } else {
+            onDeleteDocument(tempId);
+            onAddDocument(data.document);
+          }
         }
       } catch (err: unknown) {
         console.error("Upload error:", err);
         const errMsg = err instanceof Error ? err.message : "Failed to upload document";
-        onAddDocument({
-          ...tempDoc,
-          status: "failed",
-          description: errMsg,
-        });
+        if (onReplaceDocument) {
+          onReplaceDocument(tempId, {
+            ...tempDoc,
+            status: "failed",
+            description: errMsg,
+          });
+        } else {
+          onAddDocument({
+            ...tempDoc,
+            status: "failed",
+            description: errMsg,
+          });
+        }
       }
     }
   };
